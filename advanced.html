@@ -408,6 +408,16 @@
     <!-- Скрытый input для файлов -->
     <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileImport(event)">
 
-    <script src="advanced-script.js"></script>
+    <script>
+        // Определяем, какой скрипт загружать в зависимости от режима
+        const isOnline = window.location.protocol === 'https:' || window.location.hostname !== '127.0.0.1';
+        const scriptSrc = isOnline ? 'online-advanced-script.js' : 'advanced-script.js';
+        
+        const script = document.createElement('script');
+        script.src = scriptSrc;
+        document.head.appendChild(script);
+        
+        console.log(`Режим: ${isOnline ? 'Онлайн' : 'Локальный'}, загружаем: ${scriptSrc}`);
+    </script>
 </body>
 </html>
