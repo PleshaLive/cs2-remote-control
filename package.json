@@ -1,0 +1,28 @@
+{
+  "name": "cs2-remote-control",
+  "version": "1.0.0",
+  "description": "Online remote control for CS2 GSI Companion Stream Deck integration",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8080",
+    "deploy": "gh-pages -d ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/cs2-remote-control.git"
+  },
+  "keywords": [
+    "cs2",
+    "counter-strike",
+    "stream-deck",
+    "remote-control",
+    "streaming",
+    "obs"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "homepage": "https://your-username.github.io/cs2-remote-control/",
+  "devDependencies": {
+    "gh-pages": "^4.0.0"
+  }
+}

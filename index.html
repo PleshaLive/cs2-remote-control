@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS2 Remote Control - Online</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 CS2 Remote Control Online</h1>
+            <div class="connection-info">
+                <div class="status" id="status">
+                    Ожидание подключения...
+                </div>
+                <div class="session-id">
+                    Session ID: <span id="session-id">-</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="control-panel">
+                <h2>Управление трансляцией</h2>
+                
+                <div class="button-group">
+                    <button class="control-btn live" data-action="live" data-page="1" data-row="2" data-col="1">
+                        🔴 LIVE
+                    </button>
+                    
+                    <button class="control-btn pause" data-action="pause" data-page="1" data-row="2" data-col="2">
+                        ⏸️ PAUSE
+                    </button>
+                    
+                    <button class="control-btn stop" data-action="stop" data-page="1" data-row="2" data-col="3">
+                        ⏹️ STOP
+                    </button>
+                </div>
+
+                <div class="button-group">
+                    <button class="control-btn round-start" data-action="round-start" data-page="1" data-row="3" data-col="1">
+                        🏁 Старт раунда
+                    </button>
+                    
+                    <button class="control-btn round-end" data-action="round-end" data-page="1" data-row="3" data-col="2">
+                        🏁 Конец раунда
+                    </button>
+                    
+                    <button class="control-btn bomb-planted" data-action="bomb-planted" data-page="1" data-row="3" data-col="3">
+                        💣 Бомба заложена
+                    </button>
+                </div>
+
+                <div class="button-group">
+                    <h3>Тестовые кнопки</h3>
+                    <button class="control-btn test" data-action="test-1-2-1" data-page="1" data-row="2" data-col="1">
+                        Тест 1/2/1
+                    </button>
+                    
+                    <button class="control-btn test" data-action="test-1-3-2" data-page="1" data-row="3" data-col="2">
+                        Тест 1/3/2
+                    </button>
+
+                    <button class="control-btn test" data-action="custom-1" data-page="1" data-row="1" data-col="1">
+                        Кастом 1/1/1
+                    </button>
+
+                    <button class="control-btn test" data-action="custom-2" data-page="2" data-row="1" data-col="1">
+                        Кастом 2/1/1
+                    </button>
+                </div>
+            </section>
+
+            <section class="settings">
+                <h3>Информация о сессии</h3>
+                <div class="info-group">
+                    <div class="info-item">
+                        <label>URL для настройки GSI:</label>
+                        <input type="text" id="polling-url" readonly>
+                        <button class="btn-small" id="copy-url">Копировать</button>
+                    </div>
+                    <div class="info-item">
+                        <label>Статус соединения:</label>
+                        <span id="connection-details">Инициализация...</span>
+                    </div>
+                </div>
+
+                <div class="instruction">
+                    <h4>🔧 Инструкция по настройке:</h4>
+                    <ol>
+                        <li>Скопируйте URL выше</li>
+                        <li>Вставьте его в поле "Remote Controller URL" в настройках GSI Companion</li>
+                        <li>Сохраните настройки и перезапустите GSI Companion</li>
+                        <li>Статус изменится на "Подключен" когда GSI начнет опрашивать команды</li>
+                    </ol>
+                </div>
+            </section>
+
+            <section class="log">
+                <h3>Лог действий</h3>
+                <div id="event-log" class="log-content">
+                    <div class="log-entry info">Онлайн контроллер инициализирован</div>
+                </div>
+                <button id="clear-log" class="btn-small">Очистить лог</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>CS2 Remote Control Online | Версия 1.0</p>
+            <p>Используйте этот контроллер с вашим GSI Companion приложением</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
