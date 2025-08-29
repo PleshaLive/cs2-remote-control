@@ -3,26 +3,52 @@ class GlobalRemoteControl {
     constructor() {
         this.commandsSent = 0;
         this.startTime = Date.now();
-        
+        // режимы
+        this.mode = (localStorage.getItem('cs2-mode') || 'local');
+        this.firebaseApp = null;
+        this.database = null;
+        this.sessionId = localStorage.getItem('cs2-session-id') || '';
+        this.firebaseConfig = this.loadFirebaseConfig();
+
         // UI элементы
         this.statusElement = document.getElementById('status');
         this.logElement = document.getElementById('event-log');
         this.commandsSentElement = document.getElementById('commands-sent');
         this.sessionTimeElement = document.getElementById('session-time');
-        
-        // Глобальный Gist для команд (публичный)
-        this.gistId = '85e3c77f4a6b8b8e0c6d9a4b5f2c1e3d'; // Это будет создан автоматически
-        this.gistUrl = `https://api.github.com/gists/${this.gistId}`;
-        
+
+        // дополнительные UI (настройки)
+        this.modeSelect = document.getElementById('mode-select');
+        this.firebaseConfigTextarea = document.getElementById('firebase-config');
+        this.sessionIdInput = document.getElementById('session-id');
+        this.genSessionBtn = document.getElementById('gen-session');
+        this.pollingUrlInput = document.getElementById('polling-url');
+        this.copyUrlBtn = document.getElementById('copy-url');
+        this.applyBtn = document.getElementById('apply-firebase');
+        this.connDetails = document.getElementById('connection-details');
+
         this.init();
+    }
+
+    loadFirebaseConfig() {
+        try {
+            const raw = localStorage.getItem('cs2-firebase-config');
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    saveFirebaseConfig(cfg) {
+        localStorage.setItem('cs2-firebase-config', JSON.stringify(cfg));
     }
 
     init() {
         this.bindEvents();
         this.startSessionTimer();
-        
+        this.setupModeUI();
+
         this.log('🌐 Глобальный контроллер запущен', 'success');
-        this.log('ℹ️ Все команды отправляются напрямую на GSI Companion', 'info');
+        this.log('ℹ️ Кнопки работают локально без сессий. Для глобального режима используйте Firebase.', 'info');
     }
 
     bindEvents() {
@@ -40,34 +66,131 @@ class GlobalRemoteControl {
             this.exportLog();
         });
 
-        // Добавление пользовательской кнопки
-        document.getElementById('add-custom-btn').addEventListener('click', () => {
+        // Пользовательская кнопка
+        const addCustom = document.getElementById('add-custom-btn');
+        if (addCustom) addCustom.addEventListener('click', () => {
             this.addCustomButton();
         });
+
+        // Настройки режима
+        if (this.modeSelect) {
+            this.modeSelect.value = this.mode;
+            this.modeSelect.addEventListener('change', () => {
+                this.mode = this.modeSelect.value;
+                localStorage.setItem('cs2-mode', this.mode);
+                this.setupModeUI();
+            });
+        }
+
+        if (this.firebaseConfigTextarea) {
+            if (this.firebaseConfig) {
+                this.firebaseConfigTextarea.value = JSON.stringify(this.firebaseConfig, null, 2);
+            }
+        }
+
+        if (this.genSessionBtn) {
+            this.genSessionBtn.addEventListener('click', () => {
+                this.sessionId = this.generateSessionId();
+                this.sessionIdInput.value = this.sessionId;
+                localStorage.setItem('cs2-session-id', this.sessionId);
+                this.updatePollingUrl();
+            });
+        }
+
+        if (this.applyBtn) {
+            this.applyBtn.addEventListener('click', () => this.applyFirebaseSettings());
+        }
+
+        if (this.copyUrlBtn) {
+            this.copyUrlBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(this.pollingUrlInput.value || '');
+                    this.log('📋 URL скопирован', 'success');
+                } catch {
+                    this.log('⚠️ Не удалось скопировать URL', 'warning');
+                }
+            });
+        }
 
         // Горячие клавиши
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey || e.metaKey) {
                 switch(e.key) {
-                    case '1':
-                        e.preventDefault();
-                        document.querySelector('[data-action="live"]')?.click();
-                        break;
-                    case '2':
-                        e.preventDefault();
-                        document.querySelector('[data-action="pause"]')?.click();
-                        break;
-                    case '3':
-                        e.preventDefault();
-                        document.querySelector('[data-action="stop"]')?.click();
-                        break;
+                    case '1': e.preventDefault(); document.querySelector('[data-action="live"]')?.click(); break;
+                    case '2': e.preventDefault(); document.querySelector('[data-action="pause"]')?.click(); break;
+                    case '3': e.preventDefault(); document.querySelector('[data-action="stop"]')?.click(); break;
                 }
             }
         });
     }
 
+    setupModeUI() {
+        const cfgWrap = document.getElementById('firebase-config-wrap');
+        const sessWrap = document.getElementById('firebase-session-wrap');
+        const pollWrap = document.getElementById('polling-url-wrap');
+        const applyWrap = document.getElementById('apply-wrap');
+
+        if (this.mode === 'firebase') {
+            cfgWrap.style.display = '';
+            sessWrap.style.display = '';
+            pollWrap.style.display = '';
+            applyWrap.style.display = '';
+            if (this.sessionId) this.sessionIdInput.value = this.sessionId;
+            this.updatePollingUrl();
+        } else {
+            cfgWrap.style.display = 'none';
+            sessWrap.style.display = 'none';
+            pollWrap.style.display = 'none';
+            applyWrap.style.display = 'none';
+        }
+    }
+
+    updatePollingUrl() {
+        if (!this.pollingUrlInput) return;
+        if (!this.sessionId) return;
+        // URL, который GSI Companion будет опрашивать
+        this.pollingUrlInput.value = `https://cs2-remote-control-default-rtdb.firebaseio.com/sessions/${this.sessionId}/commands.json`;
+    }
+
+    async applyFirebaseSettings() {
+        if (this.mode !== 'firebase') return;
+        // читаем конфиг
+        let cfg = null;
+        try {
+            cfg = JSON.parse(this.firebaseConfigTextarea.value);
+        } catch (e) {
+            this.log('❌ Некорректный JSON Firebase config', 'error');
+            return;
+        }
+        if (!cfg || !cfg.databaseURL) {
+            this.log('❌ В конфиге должен быть databaseURL', 'error');
+            return;
+        }
+        this.firebaseConfig = cfg;
+        this.saveFirebaseConfig(cfg);
+        if (!this.sessionId) {
+            this.sessionId = this.generateSessionId();
+            this.sessionIdInput.value = this.sessionId;
+            localStorage.setItem('cs2-session-id', this.sessionId);
+        }
+        this.updatePollingUrl();
+
+        // инициализация Firebase (compat)
+        try {
+            this.firebaseApp = firebase.apps?.length ? firebase.app() : firebase.initializeApp(cfg);
+            this.database = firebase.database();
+            // создать/обновить сессию
+            const sessionRef = this.database.ref(`sessions/${this.sessionId}`);
+            await sessionRef.set({ created: firebase.database.ServerValue.TIMESTAMP, status: 'active' });
+            this.connDetails && (this.connDetails.textContent = 'Готово. Вставьте URL в GSI.');
+            this.log('✅ Firebase настроен. Можно подключать GSI.', 'success');
+        } catch (e) {
+            this.log(`❌ Ошибка инициализации Firebase: ${e.message}`, 'error');
+        }
+    }
+
     async handleButtonClick(event) {
-        const button = event.target;
+        const button = event.target.closest('.control-btn');
         const action = button.dataset.action;
         const page = parseInt(button.dataset.page) || 1;
         const row = parseInt(button.dataset.row) || 1;
@@ -76,40 +199,32 @@ class GlobalRemoteControl {
         // Визуальная обратная связь
         button.classList.add('pressed');
         button.disabled = true;
-        
-        setTimeout(() => {
-            button.classList.remove('pressed');
-            button.disabled = false;
-        }, 1000);
+        setTimeout(() => { button.classList.remove('pressed'); button.disabled = false; }, 800);
 
         const command = {
             id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-            action: action,
-            page: page,
-            row: row,
-            col: col,
+            action, page, row, col,
             timestamp: Date.now(),
             executed: false
         };
 
         try {
-            // Пробуем отправить команду напрямую в GSI Companion (если он локальный)
-            const directSuccess = await this.sendDirectCommand(command);
-            
-            if (directSuccess) {
-                this.commandsSent++;
-                this.commandsSentElement.textContent = this.commandsSent;
-                this.log(`🎯 Команда выполнена напрямую: ${action} → ${page}/${row}/${col}`, 'success');
-                return;
+            if (this.mode === 'firebase' && this.database && this.sessionId) {
+                await this.sendFirebaseCommand(command);
+            } else {
+                const directSuccess = await this.sendDirectCommand(command);
+                if (!directSuccess) {
+                    // оффлайн-демо
+                    let commands = JSON.parse(localStorage.getItem('cs2-global-commands') || '[]');
+                    commands.push(command);
+                    if (commands.length > 50) commands = commands.slice(-50);
+                    localStorage.setItem('cs2-global-commands', JSON.stringify(commands));
+                }
             }
 
-            // Fallback: отправляем команду в глобальное хранилище
-            await this.sendGlobalCommand(command);
-            
             this.commandsSent++;
             this.commandsSentElement.textContent = this.commandsSent;
-            
-            this.log(`🚀 Глобальная команда: ${action} → ${page}/${row}/${col}`, 'success');
+            this.log(`🚀 Команда отправлена: ${action} → ${page}/${row}/${col}`, 'success');
         } catch (error) {
             this.log(`❌ Ошибка отправки: ${error.message}`, 'error');
             button.disabled = false;
@@ -118,110 +233,20 @@ class GlobalRemoteControl {
 
     async sendDirectCommand(command) {
         try {
-            // Пробуем отправить команду напрямую в локальный GSI Companion
             const response = await fetch('http://localhost:2828/api/remote-press', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(command)
             });
-
             return response.ok;
-        } catch (error) {
-            // GSI Companion не доступен локально
+        } catch {
             return false;
         }
     }
 
-    async sendGlobalCommand(command) {
-        // Используем GitHub Gist как глобальное хранилище команд
-        try {
-            // Сначала получаем текущие команды
-            let currentCommands = [];
-            
-            try {
-                const response = await fetch(`https://api.github.com/gists/b4f8c2d6e1a9f5d3c8b7e6a4d2f1c3e5`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (response.ok) {
-                    const gist = await response.json();
-                    const content = gist.files['cs2-global-commands.json'].content;
-                    const data = JSON.parse(content);
-                    currentCommands = data.commands || [];
-                }
-            } catch (err) {
-                // Gist не существует или ошибка - начинаем с пустого массива
-                currentCommands = [];
-            }
-
-            // Добавляем новую команду
-            currentCommands.push(command);
-            
-            // Оставляем только последние 50 команд чтобы не переполнить Gist
-            if (currentCommands.length > 50) {
-                currentCommands = currentCommands.slice(-50);
-            }
-
-            const gistData = {
-                description: "CS2 Global Remote Control Commands",
-                public: true,
-                files: {
-                    "cs2-global-commands.json": {
-                        content: JSON.stringify({
-                            commands: currentCommands,
-                            lastUpdate: Date.now()
-                        }, null, 2)
-                    }
-                }
-            };
-
-            // Обновляем или создаем Gist
-            const response = await fetch(`https://api.github.com/gists/b4f8c2d6e1a9f5d3c8b7e6a4d2f1c3e5`, {
-                method: 'PATCH',
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(gistData)
-            });
-
-            if (!response.ok) {
-                // Если обновить не удалось, пробуем создать новый Gist
-                const createResponse = await fetch('https://api.github.com/gists', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(gistData)
-                });
-                
-                if (!createResponse.ok) {
-                    throw new Error(`HTTP ${createResponse.status}`);
-                }
-            }
-
-        } catch (error) {
-            // Fallback: используем простое хранение в localStorage для демо
-            console.warn('GitHub Gist недоступен, используем localStorage:', error);
-            
-            let commands = JSON.parse(localStorage.getItem('cs2-global-commands') || '[]');
-            commands.push(command);
-            
-            // Оставляем только последние 20 команд
-            if (commands.length > 20) {
-                commands = commands.slice(-20);
-            }
-            
-            localStorage.setItem('cs2-global-commands', JSON.stringify(commands));
-            
-            this.log('⚠️ Команда сохранена локально (для демо)', 'warning');
-        }
+    async sendFirebaseCommand(command) {
+        const ref = this.database.ref(`sessions/${this.sessionId}/commands`);
+        await ref.push({ ...command, timestamp: firebase.database.ServerValue.TIMESTAMP });
     }
 
     addCustomButton() {
@@ -229,11 +254,7 @@ class GlobalRemoteControl {
         const page = parseInt(document.getElementById('custom-page').value) || 1;
         const row = parseInt(document.getElementById('custom-row').value) || 1;
         const col = parseInt(document.getElementById('custom-col').value) || 0;
-
-        if (!label) {
-            alert('Введите название кнопки');
-            return;
-        }
+        if (!label) { alert('Введите название кнопки'); return; }
 
         const container = document.getElementById('custom-buttons');
         const button = document.createElement('button');
@@ -244,18 +265,10 @@ class GlobalRemoteControl {
         button.dataset.col = col.toString();
         button.innerHTML = `🎯 ${label}<br><small>${page}/${row}/${col}</small>`;
 
-        // Добавляем кнопку удаления
-        button.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            if (confirm('Удалить эту кнопку?')) {
-                button.remove();
-            }
-        });
-
+        button.addEventListener('contextmenu', (e) => { e.preventDefault(); if (confirm('Удалить эту кнопку?')) button.remove(); });
         button.addEventListener('click', (e) => this.handleButtonClick(e));
         container.appendChild(button);
 
-        // Очищаем форму
         document.getElementById('custom-label').value = '';
         document.getElementById('custom-page').value = '1';
         document.getElementById('custom-row').value = '1';
@@ -278,12 +291,8 @@ class GlobalRemoteControl {
         const logText = logEntries.join('\n');
         const blob = new Blob([logText], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
-        
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `cs2-global-remote-log-${Date.now()}.txt`;
-        a.click();
-        
+        a.href = url; a.download = `cs2-global-remote-log-${Date.now()}.txt`; a.click();
         URL.revokeObjectURL(url);
         this.log('📄 Лог экспортирован', 'info');
     }
@@ -293,15 +302,14 @@ class GlobalRemoteControl {
         const logEntry = document.createElement('div');
         logEntry.className = `log-entry ${type}`;
         logEntry.textContent = `[${timestamp}] ${message}`;
-        
         this.logElement.appendChild(logEntry);
         this.logElement.scrollTop = this.logElement.scrollHeight;
-
-        // Ограничиваем количество записей
         const entries = this.logElement.children;
-        if (entries.length > 100) {
-            this.logElement.removeChild(entries[0]);
-        }
+        if (entries.length > 100) { this.logElement.removeChild(entries[0]); }
+    }
+
+    generateSessionId() {
+        return 'cs2-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
     }
 }
 
@@ -310,4 +318,5 @@ let app;
 
 document.addEventListener('DOMContentLoaded', () => {
     app = new GlobalRemoteControl();
+    app.log('🎮 Система управления готова', 'success');
 });
