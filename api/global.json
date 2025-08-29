@@ -1,0 +1,17 @@
+{
+  "commands": [
+    {
+      "id": "init-1725030000000",
+      "action": "system-init",
+      "page": 1,
+      "row": 1,
+      "col": 1,
+      "timestamp": 1725030000000,
+      "executed": false,
+      "source": "system"
+    }
+  ],
+  "lastUpdate": 1725030000000,
+  "version": "2.0",
+  "status": "active"
+}

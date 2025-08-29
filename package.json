@@ -1,15 +1,17 @@
 {
   "name": "cs2-remote-control",
-  "version": "1.0.0",
-  "description": "Online remote control for CS2 GSI Companion Stream Deck integration",
-  "main": "index.html",
+  "version": "2.1.0",
+  "description": "Universal remote control for CS2 GSI Companion - works from anywhere via JSON API",
+  "main": "global.html",
   "scripts": {
     "start": "python -m http.server 8080",
+    "server": "node server.js",
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
     "deploy": "gh-pages -d ."
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/cs2-remote-control.git"
+    "url": "https://github.com/PleshaLive/cs2-remote-control.git"
   },
   "keywords": [
     "cs2",
@@ -17,12 +19,18 @@
     "stream-deck",
     "remote-control",
     "streaming",
-    "obs"
+    "obs",
+    "json-api",
+    "universal"
   ],
-  "author": "Your Name",
+  "author": "PleshaLive",
   "license": "MIT",
-  "homepage": "https://your-username.github.io/cs2-remote-control/",
+  "homepage": "https://pleshalive.github.io/cs2-remote-control/",
   "devDependencies": {
-    "gh-pages": "^4.0.0"
+    "gh-pages": "^4.0.0",
+    "concurrently": "^7.6.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
