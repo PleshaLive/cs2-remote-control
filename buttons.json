@@ -105,7 +105,5 @@
       "col": 3,
       "label": "Round 10"
     }
-  },
-  "info": "CS2 Button States - GitHub Pages Static API",
-  "note": "State '+' means button pressed (2 sec), '-' means idle"
+  }
 }

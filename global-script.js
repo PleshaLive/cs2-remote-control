@@ -93,7 +93,17 @@ class GlobalRemoteControl {
         };
 
         try {
-            // Отправляем команду в глобальное хранилище
+            // Пробуем отправить команду напрямую в GSI Companion (если он локальный)
+            const directSuccess = await this.sendDirectCommand(command);
+            
+            if (directSuccess) {
+                this.commandsSent++;
+                this.commandsSentElement.textContent = this.commandsSent;
+                this.log(`🎯 Команда выполнена напрямую: ${action} → ${page}/${row}/${col}`, 'success');
+                return;
+            }
+
+            // Fallback: отправляем команду в глобальное хранилище
             await this.sendGlobalCommand(command);
             
             this.commandsSent++;
@@ -103,6 +113,24 @@ class GlobalRemoteControl {
         } catch (error) {
             this.log(`❌ Ошибка отправки: ${error.message}`, 'error');
             button.disabled = false;
+        }
+    }
+
+    async sendDirectCommand(command) {
+        try {
+            // Пробуем отправить команду напрямую в локальный GSI Companion
+            const response = await fetch('http://localhost:2828/api/remote-press', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(command)
+            });
+
+            return response.ok;
+        } catch (error) {
+            // GSI Companion не доступен локально
+            return false;
         }
     }
 
