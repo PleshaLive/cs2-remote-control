@@ -16,9 +16,17 @@
                 </div>
                 <div class="redirect-notice">
                     <p><strong>Теперь без сессий!</strong> Просто нажимайте кнопки - они сработают на любом подключенном GSI Companion.</p>
-                    <button id="redirect-btn" class="redirect-button">
-                        🚀 Открыть глобальный контроллер
-                    </button>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button id="redirect-btn" class="redirect-button">
+                            🚀 Открыть глобальный контроллер
+                        </button>
+                        <button onclick="window.open('advanced.html', '_blank')" class="redirect-button" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            ⚙️ Продвинутый контроллер
+                        </button>
+                        <button onclick="window.open('states.html', '_blank')" class="redirect-button" style="background: linear-gradient(135deg, #ffa726, #fb8c00);">
+                            🎯 Контроллер состояний
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
