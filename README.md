@@ -5,12 +5,14 @@
 ## 🚀 Быстрый старт
 
 ### Вариант 1: GitHub Pages (простой)
-1. Откройте: https://plesh4kov.github.io/cs2-remote-control/
+1. Откройте: https://pleshalive.github.io/cs2-remote-control/
 2. Скопируйте Session ID
-3. В GSI Companion добавьте URL: `https://plesh4kov.github.io/cs2-remote-control/api/{session}`
+3. Введите один из URL:
+   - GitHub Pages: `https://pleshalive.github.io/cs2-remote-control/api/{session}`
+   - Firebase: `https://your-project-default-rtdb.firebaseio.com/sessions/{session}/commands.json`
 
 ### Вариант 2: Firebase (продвинутый)  
-1. Откройте: https://plesh4kov.github.io/cs2-remote-control/firebase.html
+1. Откройте: https://pleshalive.github.io/cs2-remote-control/firebase.html
 2. Настройте Firebase по инструкции в [FIREBASE-SETUP.md](FIREBASE-SETUP.md)
 
 3. **В GSI Companion**:
