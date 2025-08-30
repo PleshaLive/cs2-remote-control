@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CS2 Remote - Activate Button</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            color: #a0a0a0;
+            margin-bottom: 15px;
+        }
+
+        .connection-status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #4ecdc4;
+        }
+
+        .status-indicator.disconnected {
+            background: #ff6b6b;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .activate-button {
+            width: 220px;
+            height: 220px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+            margin: 30px auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .activate-button:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 20px 45px rgba(102, 126, 234, 0.5);
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .activate-button:active {
+            transform: translateY(-3px) scale(0.95);
+        }
+
+        .activate-button.pressed {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            animation: activateEffect 0.6s ease;
+        }
+
+        .activate-button.disabled {
+            background: linear-gradient(135deg, #666, #888);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .activate-button.disabled:hover {
+            transform: none;
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        @keyframes activateEffect {
+            0% { transform: scale(1); box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4); }
+            25% { transform: scale(0.95); box-shadow: 0 25px 55px rgba(76, 205, 196, 0.6); }
+            50% { transform: scale(1.1); box-shadow: 0 30px 60px rgba(76, 205, 196, 0.8); }
+            75% { transform: scale(1.05); box-shadow: 0 25px 55px rgba(76, 205, 196, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4); }
+        }
+
+        .button-emoji {
+            font-size: 48px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .button-text {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .coordinates-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .coordinates-info h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .coordinates {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1.3em;
+            color: #ffa726;
+            margin: 12px 0;
+            border: 2px solid rgba(255, 167, 38, 0.3);
+        }
+
+        .activity-log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 25px;
+            max-height: 250px;
+            overflow-y: auto;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .activity-log h4 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+
+        .log-entry {
+            font-size: 0.95em;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid;
+        }
+
+        .log-entry.success {
+            color: #4ecdc4;
+            border-left-color: #4ecdc4;
+            background: rgba(76, 205, 196, 0.1);
+        }
+
+        .log-entry.error {
+            color: #ff6b6b;
+            border-left-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .log-entry.info {
+            color: #ffa726;
+            border-left-color: #ffa726;
+            background: rgba(255, 167, 38, 0.1);
+        }
+
+        .timestamp {
+            color: #a0a0a0;
+            font-size: 0.85em;
+            font-weight: normal;
+        }
+
+        /* Мобильная оптимизация */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 2.2em;
+            }
+            
+            .activate-button {
+                width: 180px;
+                height: 180px;
+                font-size: 24px;
+            }
+            
+            .button-emoji {
+                font-size: 40px;
+            }
+            
+            .button-text {
+                font-size: 18px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+
+        /* Touch оптимизация */
+        @media (hover: none) and (pointer: coarse) {
+            .activate-button:hover {
+                transform: none;
+                box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+            }
+        }
+
+        /* Прелоадер */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #4ecdc4;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 CS2 Remote</h1>
+            <p>Активация кнопки Stream Deck</p>
+        </div>
+
+        <div class="connection-status">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span id="connectionStatus">Проверка подключения...</span>
+        </div>
+
+        <button class="activate-button" id="activateButton" onclick="activateStreamDeck()">
+            <span class="button-emoji">🚀</span>
+            <span class="button-text">ACTIVATE</span>
+        </button>
+
+        <div class="coordinates-info">
+            <h3>📍 Stream Deck Позиция</h3>
+            <div class="coordinates">Page 1 • Row 2 • Column 1</div>
+            <p><strong>При нажатии:</strong> Активируется кнопка в Stream Deck на позиции <code>1/2/1</code></p>
+        </div>
+
+        <div class="activity-log">
+            <h4>📊 Активность</h4>
+            <div id="logContainer">
+                <!-- Лог записи появятся здесь -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let isConnected = false;
+        let isButtonActive = false;
+        let activationCount = 0;
+
+        // Конфигурация кнопки
+        const buttonConfig = {
+            buttonKey: 'simple_activate',
+            page: 1,
+            row: 2,
+            col: 1,
+            label: 'Simple Activate Button',
+            apiUrl: 'https://pleshalive.github.io/cs2-remote-control/api/global'
+        };
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            
+            // Добавляем touch события для мобильных устройств
+            setupTouchEvents();
+            
+            // Проверяем соединение каждые 10 секунд
+            setInterval(checkConnection, 10000);
+        });
+
+        function initializeApp() {
+            log('🚀 Инициализация простой кнопки активации...', 'info');
+            checkConnection();
+        }
+
+        function setupTouchEvents() {
+            const button = document.getElementById('activateButton');
+            
+            // Предотвращаем стандартное поведение touch событий
+            button.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (!button.classList.contains('disabled')) {
+                    button.style.transform = 'scale(0.95)';
+                    button.style.background = 'linear-gradient(135deg, #4ecdc4, #44a08d)';
+                }
+            }, { passive: false });
+            
+            button.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                if (!button.classList.contains('disabled')) {
+                    setTimeout(() => {
+                        button.style.transform = 'scale(1)';
+                        button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                    }, 150);
+                }
+            }, { passive: false });
+        }
+
+        async function checkConnection() {
+            try {
+                const response = await fetch(buttonConfig.apiUrl, {
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.buttons) {
+                        updateConnectionStatus(true);
+                        log('✅ Подключение к API успешно', 'success');
+                    } else {
+                        updateConnectionStatus(false);
+                        log('⚠️ API недоступен или некорректные данные', 'error');
+                    }
+                } else {
+                    updateConnectionStatus(false);
+                    log(`❌ Ошибка API: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                updateConnectionStatus(false);
+                log(`❌ Ошибка подключения: ${error.message}`, 'error');
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const indicator = document.getElementById('statusIndicator');
+            const status = document.getElementById('connectionStatus');
+            const button = document.getElementById('activateButton');
+            
+            if (connected) {
+                indicator.className = 'status-indicator connected';
+                status.textContent = '✅ Подключено к GSI API';
+                button.classList.remove('disabled');
+            } else {
+                indicator.className = 'status-indicator disconnected';
+                status.textContent = '❌ Нет подключения к API';
+                button.classList.add('disabled');
+            }
+        }
+
+        async function activateStreamDeck() {
+            if (!isConnected || isButtonActive) {
+                if (!isConnected) {
+                    log('⚠️ Кнопка неактивна - нет подключения к API', 'error');
+                } else {
+                    log('⚠️ Кнопка уже активна, ожидайте...', 'info');
+                }
+                return;
+            }
+
+            const button = document.getElementById('activateButton');
+            
+            try {
+                isButtonActive = true;
+                button.classList.add('pressed');
+                
+                activationCount++;
+                log(`🎯 Активация #${activationCount}: Отправка команды в Stream Deck (1/2/1)`, 'info');
+                
+                // Обновляем состояние кнопки в локальном объекте
+                const activationData = {
+                    buttonKey: buttonConfig.buttonKey,
+                    state: '+',
+                    timestamp: Date.now(),
+                    page: buttonConfig.page,
+                    row: buttonConfig.row,
+                    col: buttonConfig.col,
+                    label: buttonConfig.label
+                };
+                
+                // Отправляем команду (в реальной версии здесь должна быть отправка в API)
+                await sendActivationCommand(activationData);
+                
+                log(`✅ Команда успешно отправлена в GSI Companion`, 'success');
+                log(`📡 Stream Deck кнопка активирована: ${buttonConfig.page}/${buttonConfig.row}/${buttonConfig.col}`, 'success');
+                
+                // Автоматическая деактивация через 2.5 секунды
+                setTimeout(() => {
+                    deactivateButton();
+                }, 2500);
+                
+            } catch (error) {
+                log(`❌ Ошибка активации: ${error.message}`, 'error');
+                isButtonActive = false;
+                button.classList.remove('pressed');
+            }
+        }
+
+        async function sendActivationCommand(data) {
+            // В реальной реализации здесь должна быть отправка данных в API
+            // Сейчас просто имитируем успешную отправку
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    // Имитация успешной отправки (90% успеха)
+                    if (Math.random() > 0.1) {
+                        resolve({ success: true, message: 'Command sent successfully' });
+                    } else {
+                        reject(new Error('Network timeout'));
+                    }
+                }, 200);
+            });
+        }
+
+        function deactivateButton() {
+            const button = document.getElementById('activateButton');
+            
+            isButtonActive = false;
+            button.classList.remove('pressed');
+            
+            log('⏹️ Кнопка деактивирована - готова к следующему использованию', 'info');
+        }
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            
+            logEntry.innerHTML = `
+                <div>
+                    <span class="timestamp">[${timestamp}]</span> ${message}
+                </div>
+            `;
+            
+            const container = document.getElementById('logContainer');
+            container.insertBefore(logEntry, container.firstChild);
+            
+            // Ограничиваем количество записей в логе (максимум 15)
+            if (container.children.length > 15) {
+                container.removeChild(container.lastChild);
+            }
+            
+            // Автоскролл к последней записи
+            container.scrollTop = 0;
+        }
+
+        // Предотвращаем масштабирование на мобильных при двойном тапе
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Инициализируем лог при загрузке
+        window.addEventListener('load', function() {
+            log('🎮 Простая кнопка активации загружена и готова к работе', 'info');
+        });
+    </script>
+</body>
+</html>

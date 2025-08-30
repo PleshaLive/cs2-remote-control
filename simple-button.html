@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CS2 Remote - Простая кнопка</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            color: #a0a0a0;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .main-button {
+            width: 200px;
+            height: 200px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .main-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .main-button:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .main-button.pressed {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            animation: pressEffect 0.3s ease;
+        }
+
+        @keyframes pressEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        .button-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .button-info h3 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .coordinates {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            color: #ffa726;
+            margin: 10px 0;
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .log h4 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        .log-entry {
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .timestamp {
+            color: #a0a0a0;
+            font-size: 0.8em;
+        }
+
+        .success { color: #4ecdc4; }
+        .error { color: #ff6b6b; }
+        .info { color: #ffa726; }
+
+        /* Мобильная оптимизация */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-button {
+                width: 150px;
+                height: 150px;
+                font-size: 20px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+
+        /* Touch эффекты для мобильных */
+        @media (hover: none) and (pointer: coarse) {
+            .main-button:hover {
+                transform: none;
+                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            }
+            
+            .main-button:active {
+                transform: scale(0.95);
+                background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 CS2 Remote</h1>
+            <p>Простая кнопка для управления Stream Deck</p>
+        </div>
+
+        <div class="status">
+            <span class="status-indicator"></span>
+            <span id="statusText">Готов к работе</span>
+        </div>
+
+        <button class="main-button" id="mainButton" onclick="pressButton()">
+            🚀<br>ACTIVATE
+        </button>
+
+        <div class="button-info">
+            <h3>📍 Stream Deck позиция</h3>
+            <div class="coordinates">Page 1 • Row 2 • Column 1</div>
+            <p>При нажатии этой кнопки активируется кнопка в Stream Deck на позиции <strong>1/2/1</strong></p>
+        </div>
+
+        <div class="log">
+            <h4>📜 Лог действий</h4>
+            <div id="logContainer">
+                <div class="log-entry info">Система инициализирована</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let buttonData = {
+            buttonKey: 'simple_activate',
+            state: '-',
+            timestamp: 0,
+            page: 1,
+            row: 2,
+            col: 1,
+            label: 'Simple Activate Button'
+        };
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Простая кнопка загружена', 'info');
+            updateStatus('Готов к использованию');
+            
+            // Добавляем touch события для мобильных
+            const button = document.getElementById('mainButton');
+            
+            // Touch события
+            button.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                button.style.transform = 'scale(0.95)';
+                button.style.background = 'linear-gradient(135deg, #4ecdc4, #44a08d)';
+            }, { passive: false });
+            
+            button.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                button.style.transform = 'scale(1)';
+                button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            }, { passive: false });
+        });
+
+        async function pressButton() {
+            const button = document.getElementById('mainButton');
+            
+            // Визуальная обратная связь
+            button.classList.add('pressed');
+            updateStatus('Кнопка активирована!');
+            
+            log('🎯 Нажата кнопка ACTIVATE', 'info');
+            
+            // Обновляем состояние кнопки
+            buttonData.state = '+';
+            buttonData.timestamp = Date.now();
+            
+            try {
+                // Обновляем JSON API (имитация)
+                await updateRemoteAPI();
+                
+                log('✅ Команда отправлена в GSI Companion (1/2/1)', 'success');
+                updateStatus('Команда отправлена успешно!');
+                
+                // Автоматическая деактивация через 2 секунды
+                setTimeout(() => {
+                    buttonData.state = '-';
+                    buttonData.timestamp = Date.now();
+                    log('⏹️ Кнопка деактивирована', 'info');
+                    updateStatus('Готов к следующему нажатию');
+                    button.classList.remove('pressed');
+                }, 2000);
+                
+            } catch (error) {
+                log(`❌ Ошибка: ${error.message}`, 'error');
+                updateStatus('Ошибка отправки команды');
+                button.classList.remove('pressed');
+            }
+        }
+
+        async function updateRemoteAPI() {
+            // Имитируем отправку данных в JSON API
+            // В реальности здесь должно быть обновление 
+            // https://pleshalive.github.io/cs2-remote-control/api/global
+            
+            const apiData = {
+                buttons: {
+                    [buttonData.buttonKey]: {
+                        state: buttonData.state,
+                        timestamp: buttonData.timestamp,
+                        page: buttonData.page,
+                        row: buttonData.row,
+                        col: buttonData.col,
+                        label: buttonData.label
+                    }
+                },
+                lastUpdate: Date.now()
+            };
+            
+            // Логируем что отправляем
+            log(`📡 Обновление API: state="${buttonData.state}"`, 'info');
+            
+            // Здесь должна быть реальная отправка данных
+            // Пока что просто имитируем успешную отправку
+            return new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        function updateStatus(text) {
+            document.getElementById('statusText').textContent = text;
+        }
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            
+            const container = document.getElementById('logContainer');
+            container.insertBefore(logEntry, container.firstChild);
+            
+            // Ограничиваем количество записей в логе
+            if (container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // Предотвращаем зум на мобильных при двойном тапе
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>

@@ -57,13 +57,13 @@
       "col": 4,
       "label": "Конец раунда"
     },
-    "clutch_mode": {
+    "simple_activate": {
       "state": "-",
       "timestamp": 0,
       "page": 1,
       "row": 2,
       "col": 1,
-      "label": "Клатч режим"
+      "label": "Simple Activate Button"
     },
     "ace_moment": {
       "state": "-",
