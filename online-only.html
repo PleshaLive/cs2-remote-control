@@ -204,8 +204,8 @@
     <div class="header">
         <h1><i class="fas fa-gamepad"></i> CS2 Online Controller</h1>
         <div class="status">
-            <i class="fas fa-wifi"></i>
-            <span>Онлайн режим активен</span>
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <span>Проверка подключения...</span>
         </div>
     </div>
 
@@ -232,11 +232,38 @@
                 this.log('🚀 Инициализация онлайн контроллера...', 'info');
                 await this.loadDefaultButtons();
                 this.createButtonsGrid();
+                
+                // Проверяем подключение к GSI Companion
+                await this.checkGSIConnection();
+                
                 this.log('✅ Контроллер готов к работе', 'success');
                 
                 // Определение мобильного устройства
                 if (/Mobi|Android/i.test(navigator.userAgent)) {
                     this.log('📱 Мобильное устройство обнаружено', 'info');
+                }
+                
+                // Периодическая проверка подключения (каждые 10 секунд)
+                setInterval(() => this.checkGSIConnection(), 10000);
+            }
+
+            async checkGSIConnection() {
+                try {
+                    const response = await fetch('http://127.0.0.1:2828/api/local-buttons', {
+                        method: 'GET',
+                        timeout: 2000
+                    });
+                    
+                    if (response.ok) {
+                        this.setConnectionStatus(true);
+                        return true;
+                    } else {
+                        this.setConnectionStatus(false);
+                        return false;
+                    }
+                } catch (error) {
+                    this.setConnectionStatus(false);
+                    return false;
                 }
             }
 
@@ -367,30 +394,52 @@
                     label: this.buttons[buttonKey]?.label
                 };
 
-                // Локальное сохранение
+                // Локальное сохранение (всегда работает)
                 localStorage.setItem(`cs2-button-${buttonKey}`, JSON.stringify(apiData));
 
-                // Отправка в GSI Companion (если доступен)
+                // Попытка отправки в GSI Companion (только если доступен)
                 try {
                     const response = await fetch('http://127.0.0.1:2828/api/button-press', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify(apiData)
+                        body: JSON.stringify(apiData),
+                        timeout: 3000 // 3 секунды таймаут
                     });
 
                     if (response.ok) {
-                        this.log(`📡 API обновлен: ${buttonKey} -> ${state}`, 'success');
+                        this.log(`📡 Отправлено в GSI: ${buttonKey} -> ${state}`, 'success');
+                        this.setConnectionStatus(true);
                     } else {
-                        this.log(`⚠️ API недоступен (код: ${response.status})`, 'warning');
+                        this.log(`⚠️ GSI недоступен (код: ${response.status})`, 'warning');
+                        this.setConnectionStatus(false);
                     }
                 } catch (error) {
-                    this.log(`💾 Сохранено локально: ${buttonKey}`, 'info');
+                    // GSI Companion недоступен - работаем оффлайн
+                    this.log(`💾 Оффлайн режим: ${buttonKey} сохранен`, 'info');
+                    this.setConnectionStatus(false);
                 }
 
-                // Копируем JSON для ручного обновления
-                this.showUpdateDialog(buttonKey, state);
+                // Показываем JSON для ручного обновления (только для активации)
+                if (state === '+') {
+                    this.showUpdateDialog(buttonKey, state);
+                }
+            }
+
+            setConnectionStatus(isOnline) {
+                const statusEl = document.querySelector('.status span');
+                const iconEl = document.querySelector('.status i');
+                
+                if (isOnline) {
+                    statusEl.textContent = 'Подключен к GSI Companion';
+                    iconEl.className = 'fas fa-wifi';
+                    iconEl.style.color = '#4ecdc4';
+                } else {
+                    statusEl.textContent = 'Оффлайн режим (GSI недоступен)';
+                    iconEl.className = 'fas fa-wifi-slash';
+                    iconEl.style.color = '#ffa726';
+                }
             }
 
             showUpdateDialog(buttonKey, state) {
@@ -399,15 +448,70 @@
                     lastUpdate: Date.now(),
                     button: buttonKey,
                     state: state,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    coordinates: this.getButtonCoordinates(buttonKey)
                 };
 
                 console.log('📋 JSON для обновления API:', JSON.stringify(updateData, null, 2));
                 
-                // Показываем уведомление только для активации (не для деактивации)
+                // Показываем диалог с инструкциями только если GSI недоступен
                 if (state === '+') {
-                    this.log(`📋 JSON для API готов (смотрите консоль)`, 'info');
+                    const existingDialog = document.getElementById('update-dialog');
+                    if (existingDialog) existingDialog.remove();
+
+                    const dialog = document.createElement('div');
+                    dialog.id = 'update-dialog';
+                    dialog.style.cssText = `
+                        position: fixed; top: 20px; right: 20px;
+                        background: linear-gradient(135deg, #1a1a2e, #16213e);
+                        color: white; padding: 15px; border-radius: 10px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                        z-index: 10000; max-width: 300px;
+                        border: 1px solid #4ecdc4;
+                    `;
+
+                    const buttonInfo = this.buttons[buttonKey];
+                    const coords = this.getButtonCoordinates(buttonKey);
+                    
+                    dialog.innerHTML = `
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <i class="${buttonInfo.icon}" style="margin-right: 8px; color: #4ecdc4;"></i>
+                            <strong>${buttonInfo.label}</strong>
+                        </div>
+                        <div style="font-size: 12px; opacity: 0.8;">
+                            Кнопка: ${buttonKey}<br>
+                            Stream Deck: ${coords.page}/${coords.row}/${coords.col}<br>
+                            Время: ${new Date().toLocaleTimeString()}
+                        </div>
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; font-size: 11px;">
+                            � Сохранено локально<br>
+                            �📋 JSON выведен в консоль
+                        </div>
+                    `;
+
+                    document.body.appendChild(dialog);
+
+                    // Автоматически скрываем через 4 секунды
+                    setTimeout(() => {
+                        if (document.getElementById('update-dialog')) {
+                            dialog.remove();
+                        }
+                    }, 4000);
                 }
+            }
+
+            getButtonCoordinates(buttonKey) {
+                const mapping = {
+                    'bomb_planted': { page: 1, row: 1, col: 1 },
+                    'bomb_defused': { page: 1, row: 1, col: 2 },
+                    'round_start': { page: 1, row: 1, col: 3 },
+                    'round_end': { page: 1, row: 1, col: 4 },
+                    'clutch_mode': { page: 1, row: 2, col: 1 },
+                    'ace_moment': { page: 1, row: 2, col: 2 },
+                    'headshot': { page: 1, row: 2, col: 3 },
+                    'multikill': { page: 1, row: 2, col: 4 }
+                };
+                return mapping[buttonKey] || { page: 1, row: 1, col: 1 };
             }
 
             log(message, type = 'info') {

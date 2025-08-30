@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>CS2 Remote Controller - Universal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(45deg, #4ecdc4, #667eea);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(76, 205, 196, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .status i {
+            margin-right: 8px;
+            color: #4ecdc4;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .button-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .button-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(76, 205, 196, 0.3);
+        }
+
+        .button-card.active {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            transform: scale(1.02);
+            box-shadow: 0 12px 25px rgba(76, 205, 196, 0.4);
+        }
+
+        .button-card:active {
+            transform: scale(0.98);
+        }
+
+        .button-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            color: white;
+        }
+
+        .button-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .button-state {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-top: 4px;
+        }
+
+        .info-panel {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .log-container {
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+
+        .log-entry {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .log-success { color: #4ecdc4; }
+        .log-info { color: #667eea; }
+        .log-warning { color: #ffa726; }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .header h1 { font-size: 1.6rem; }
+            .button-card { min-height: 90px; padding: 12px; }
+            .button-icon { font-size: 1.5rem; }
+            .button-label { font-size: 0.8rem; }
+            .buttons-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+            .notification { right: 10px; top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-gamepad"></i> CS2 Remote Controller</h1>
+        <div class="status">
+            <i class="fas fa-circle-check"></i>
+            <span>Универсальный режим</span>
+        </div>
+    </div>
+
+    <div class="buttons-grid" id="buttonsGrid">
+        <!-- Кнопки будут добавлены через JavaScript -->
+    </div>
+
+    <div class="info-panel">
+        <div class="stats">
+            <span>Нажато: <strong id="pressCount">0</strong></span>
+            <span>Сессия: <strong id="sessionTime">00:00</strong></span>
+            <span>Режим: <strong>Автономный</strong></span>
+        </div>
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                <i class="fas fa-list" style="margin-right: 8px;"></i>
+                <strong>Журнал событий</strong>
+            </div>
+            <div class="log-container" id="logContainer">
+                <!-- Лог-записи -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class UniversalController {
+            constructor() {
+                this.buttons = {};
+                this.logs = [];
+                this.pressCount = 0;
+                this.sessionStart = Date.now();
+                this.init();
+            }
+
+            async init() {
+                this.log('🚀 Инициализация универсального контроллера...', 'info');
+                await this.loadDefaultButtons();
+                this.createButtonsGrid();
+                this.startSessionTimer();
+                this.log('✅ Контроллер готов к работе', 'success');
+                
+                // Определение устройства
+                const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+                this.log(isMobile ? '📱 Мобильное устройство' : '💻 Десктоп режим', 'info');
+                
+                // Загружаем сохраненную статистику
+                this.loadStats();
+            }
+
+            async loadDefaultButtons() {
+                this.buttons = {
+                    'bomb_planted': {
+                        label: 'Бомба заложена',
+                        icon: 'fas fa-bomb',
+                        state: '-',
+                        timestamp: 0,
+                        coords: '1/1/1'
+                    },
+                    'bomb_defused': {
+                        label: 'Бомба обезврежена',
+                        icon: 'fas fa-shield-alt',
+                        state: '-',
+                        timestamp: 0,
+                        coords: '1/1/2'
+                    },
+                    'round_start': {
+                        label: 'Начало раунда',
+                        icon: 'fas fa-play',
+                        state: '-',
+                        timestamp: 0,
+                        coords: '1/1/3'
+                    },
+                    'round_end': {
+                        label: 'Конец раунда',
+                        icon: 'fas fa-stop',
+                        state: '-',
+                        timestamp: 0,
+                        coords: '1/1/4'
+                    },
+                    'clutch_mode': {
+                        label: 'Клатч режим',
+                        icon: 'fas fa-crosshairs',
+                        state: '-',
+                        timestamp: 0,
+                        coords: '1/2/1'
+                    },
+                    'ace_moment': {
+                        label: 'Эйс момент',
+                        icon: 'fas fa-crown',
+                        state: '-',
+                        timestamp: 0,
+                        coords: '1/2/2'
+                    },
+                    'headshot': {
+                        label: 'Хедшот',
+                        icon: 'fas fa-bullseye',
+                        state: '-',
+                        timestamp: 0,
+                        coords: '1/2/3'
+                    },
+                    'multikill': {
+                        label: 'Мультикилл',
+                        icon: 'fas fa-skull-crossbones',
+                        state: '-',
+                        timestamp: 0,
+                        coords: '1/2/4'
+                    }
+                };
+            }
+
+            createButtonsGrid() {
+                const grid = document.getElementById('buttonsGrid');
+                grid.innerHTML = '';
+
+                Object.entries(this.buttons).forEach(([key, button]) => {
+                    const buttonCard = document.createElement('div');
+                    buttonCard.className = 'button-card';
+                    buttonCard.id = `button-${key}`;
+                    
+                    buttonCard.innerHTML = `
+                        <i class="${button.icon} button-icon"></i>
+                        <div class="button-label">${button.label}</div>
+                        <div class="button-state">${button.state}</div>
+                    `;
+
+                    // Универсальные события (работают везде)
+                    buttonCard.addEventListener('click', () => this.activateButton(key));
+                    buttonCard.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        this.activateButton(key);
+                    });
+
+                    grid.appendChild(buttonCard);
+                });
+            }
+
+            async activateButton(buttonKey) {
+                if (!this.buttons[buttonKey]) return;
+
+                const button = this.buttons[buttonKey];
+                button.state = '+';
+                button.timestamp = Date.now();
+
+                // Визуальная активация
+                const buttonElement = document.getElementById(`button-${buttonKey}`);
+                if (buttonElement) {
+                    buttonElement.classList.add('active');
+                    buttonElement.querySelector('.button-state').textContent = '+';
+                }
+
+                // Увеличиваем счетчик
+                this.pressCount++;
+                this.updateStats();
+
+                this.log(`🎯 ${button.label} (${button.coords})`, 'success');
+                
+                // Показываем уведомление
+                this.showNotification(`${button.label} активирована!`);
+
+                // Сохраняем локально
+                this.saveButtonState(buttonKey, button);
+
+                // Автоматическая деактивация через 2 секунды
+                setTimeout(() => {
+                    button.state = '-';
+                    button.timestamp = Date.now();
+                    if (buttonElement) {
+                        buttonElement.classList.remove('active');
+                        buttonElement.querySelector('.button-state').textContent = '-';
+                    }
+                    this.log(`⏹️ ${button.label} деактивирована`, 'info');
+                    this.saveButtonState(buttonKey, button);
+                }, 2000);
+            }
+
+            saveButtonState(buttonKey, buttonData) {
+                const saveData = {
+                    ...buttonData,
+                    savedAt: Date.now()
+                };
+                localStorage.setItem(`cs2-universal-${buttonKey}`, JSON.stringify(saveData));
+                
+                // Сохраняем общую статистику
+                const stats = {
+                    pressCount: this.pressCount,
+                    sessionStart: this.sessionStart,
+                    lastActivity: Date.now()
+                };
+                localStorage.setItem('cs2-universal-stats', JSON.stringify(stats));
+            }
+
+            loadStats() {
+                try {
+                    const stats = JSON.parse(localStorage.getItem('cs2-universal-stats') || '{}');
+                    if (stats.pressCount) {
+                        this.pressCount = stats.pressCount;
+                    }
+                    this.updateStats();
+                } catch (error) {
+                    console.warn('Не удалось загрузить статистику:', error);
+                }
+            }
+
+            updateStats() {
+                document.getElementById('pressCount').textContent = this.pressCount;
+            }
+
+            startSessionTimer() {
+                setInterval(() => {
+                    const elapsed = Date.now() - this.sessionStart;
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    document.getElementById('sessionTime').textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.innerHTML = `<i class="fas fa-check-circle" style="margin-right: 8px;"></i>${message}`;
+                
+                document.body.appendChild(notification);
+                
+                // Показываем с анимацией
+                setTimeout(() => notification.classList.add('show'), 100);
+                
+                // Скрываем через 2 секунды
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 2000);
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = {
+                    timestamp,
+                    message,
+                    type
+                };
+                
+                this.logs.unshift(logEntry);
+                
+                // Ограничиваем количество логов
+                if (this.logs.length > 30) {
+                    this.logs = this.logs.slice(0, 30);
+                }
+                
+                this.updateLogDisplay();
+            }
+
+            updateLogDisplay() {
+                const container = document.getElementById('logContainer');
+                container.innerHTML = this.logs.map(log => 
+                    `<div class="log-entry log-${log.type}">
+                        [${log.timestamp}] ${log.message}
+                    </div>`
+                ).join('');
+                
+                container.scrollTop = 0;
+            }
+        }
+
+        // Предотвращение случайного зума на мобильных
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+        }
+
+        // Инициализация контроллера
+        const controller = new UniversalController();
+    </script>
+</body>
+</html>
