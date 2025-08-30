@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>CS2 Online Controller</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #4ecdc4, #667eea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(76, 205, 196, 0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid #4ecdc4;
+            margin-bottom: 20px;
+        }
+
+        .status i {
+            color: #4ecdc4;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .button-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .button-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .button-card:hover::before {
+            left: 100%;
+        }
+
+        .button-card:hover {
+            transform: translateY(-5px);
+            border-color: #4ecdc4;
+            box-shadow: 0 10px 25px rgba(76, 205, 196, 0.2);
+        }
+
+        .button-card.active {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(76, 205, 196, 0.4);
+            animation: buttonPulse 2s ease-in-out;
+        }
+
+        @keyframes buttonPulse {
+            0%, 100% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
+        }
+
+        .button-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .button-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .button-state {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            background: rgba(0,0,0,0.3);
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-top: 5px;
+        }
+
+        .log-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .log-success { color: #4ecdc4; }
+        .log-info { color: #667eea; }
+        .log-warning { color: #ffa726; }
+        .log-error { color: #ef5350; }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .button-card {
+                min-height: 100px;
+                padding: 15px;
+                margin: 5px;
+            }
+
+            .button-card:hover {
+                transform: none;
+            }
+
+            .button-card:active,
+            .button-card.pressed {
+                transform: scale(0.95);
+                transition: transform 0.1s ease;
+            }
+
+            .buttons-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .button-icon {
+                font-size: 1.5rem;
+            }
+
+            .button-label {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-gamepad"></i> CS2 Online Controller</h1>
+        <div class="status">
+            <i class="fas fa-wifi"></i>
+            <span>Онлайн режим активен</span>
+        </div>
+    </div>
+
+    <div class="buttons-grid" id="buttonsGrid">
+        <!-- Кнопки будут добавлены через JavaScript -->
+    </div>
+
+    <div class="log-container">
+        <h3><i class="fas fa-list"></i> Журнал событий</h3>
+        <div id="logContainer">
+            <!-- Лог-записи -->
+        </div>
+    </div>
+
+    <script>
+        class OnlineController {
+            constructor() {
+                this.buttons = {};
+                this.logs = [];
+                this.init();
+            }
+
+            async init() {
+                this.log('🚀 Инициализация онлайн контроллера...', 'info');
+                await this.loadDefaultButtons();
+                this.createButtonsGrid();
+                this.log('✅ Контроллер готов к работе', 'success');
+                
+                // Определение мобильного устройства
+                if (/Mobi|Android/i.test(navigator.userAgent)) {
+                    this.log('📱 Мобильное устройство обнаружено', 'info');
+                }
+            }
+
+            async loadDefaultButtons() {
+                this.buttons = {
+                    'bomb_planted': {
+                        label: 'Бомба заложена',
+                        icon: 'fas fa-bomb',
+                        state: '-',
+                        timestamp: 0
+                    },
+                    'bomb_defused': {
+                        label: 'Бомба обезврежена',
+                        icon: 'fas fa-shield-alt',
+                        state: '-',
+                        timestamp: 0
+                    },
+                    'round_start': {
+                        label: 'Начало раунда',
+                        icon: 'fas fa-play',
+                        state: '-',
+                        timestamp: 0
+                    },
+                    'round_end': {
+                        label: 'Конец раунда',
+                        icon: 'fas fa-stop',
+                        state: '-',
+                        timestamp: 0
+                    },
+                    'clutch_mode': {
+                        label: 'Клатч режим',
+                        icon: 'fas fa-crosshairs',
+                        state: '-',
+                        timestamp: 0
+                    },
+                    'ace_moment': {
+                        label: 'Эйс момент',
+                        icon: 'fas fa-crown',
+                        state: '-',
+                        timestamp: 0
+                    },
+                    'headshot': {
+                        label: 'Хедшот',
+                        icon: 'fas fa-bullseye',
+                        state: '-',
+                        timestamp: 0
+                    },
+                    'multikill': {
+                        label: 'Мультикилл',
+                        icon: 'fas fa-skull-crossbones',
+                        state: '-',
+                        timestamp: 0
+                    }
+                };
+            }
+
+            createButtonsGrid() {
+                const grid = document.getElementById('buttonsGrid');
+                grid.innerHTML = '';
+
+                Object.entries(this.buttons).forEach(([key, button]) => {
+                    const buttonCard = document.createElement('div');
+                    buttonCard.className = 'button-card';
+                    buttonCard.id = `button-${key}`;
+                    
+                    buttonCard.innerHTML = `
+                        <i class="${button.icon} button-icon"></i>
+                        <div class="button-label">${button.label}</div>
+                        <div class="button-state">${button.state}</div>
+                    `;
+
+                    // Click/Touch events
+                    buttonCard.onclick = () => this.activateButton(key);
+                    
+                    // Mobile touch support
+                    buttonCard.ontouchstart = (e) => {
+                        buttonCard.style.transform = 'scale(0.95)';
+                        buttonCard.style.transition = 'transform 0.1s';
+                    };
+
+                    buttonCard.ontouchend = (e) => {
+                        buttonCard.style.transform = '';
+                        this.activateButton(key);
+                        e.preventDefault();
+                    };
+
+                    grid.appendChild(buttonCard);
+                });
+            }
+
+            async activateButton(buttonKey) {
+                if (!this.buttons[buttonKey]) return;
+
+                const button = this.buttons[buttonKey];
+                button.state = '+';
+                button.timestamp = Date.now();
+
+                // Визуальная активация
+                const buttonElement = document.getElementById(`button-${buttonKey}`);
+                if (buttonElement) {
+                    buttonElement.classList.add('active');
+                    buttonElement.querySelector('.button-state').textContent = '+';
+                }
+
+                this.log(`🎯 Активирована: ${button.label}`, 'success');
+
+                // Отправляем в API
+                await this.updateAPI(buttonKey, '+');
+
+                // Автоматическая деактивация через 2 секунды
+                setTimeout(async () => {
+                    button.state = '-';
+                    button.timestamp = Date.now();
+                    if (buttonElement) {
+                        buttonElement.classList.remove('active');
+                        buttonElement.querySelector('.button-state').textContent = '-';
+                    }
+                    await this.updateAPI(buttonKey, '-');
+                    this.log(`⏹️ Деактивирована: ${button.label}`, 'info');
+                }, 2000);
+            }
+
+            async updateAPI(buttonKey, state) {
+                const apiData = {
+                    buttonKey: buttonKey,
+                    state: state,
+                    timestamp: Date.now(),
+                    label: this.buttons[buttonKey]?.label
+                };
+
+                // Локальное сохранение
+                localStorage.setItem(`cs2-button-${buttonKey}`, JSON.stringify(apiData));
+
+                // Отправка в GSI Companion (если доступен)
+                try {
+                    const response = await fetch('http://127.0.0.1:2828/api/button-press', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(apiData)
+                    });
+
+                    if (response.ok) {
+                        this.log(`📡 API обновлен: ${buttonKey} -> ${state}`, 'success');
+                    } else {
+                        this.log(`⚠️ API недоступен (код: ${response.status})`, 'warning');
+                    }
+                } catch (error) {
+                    this.log(`💾 Сохранено локально: ${buttonKey}`, 'info');
+                }
+
+                // Копируем JSON для ручного обновления
+                this.showUpdateDialog(buttonKey, state);
+            }
+
+            showUpdateDialog(buttonKey, state) {
+                // Создаем JSON для обновления GitHub Pages API
+                const updateData = {
+                    lastUpdate: Date.now(),
+                    button: buttonKey,
+                    state: state,
+                    timestamp: Date.now()
+                };
+
+                console.log('📋 JSON для обновления API:', JSON.stringify(updateData, null, 2));
+                
+                // Показываем уведомление только для активации (не для деактивации)
+                if (state === '+') {
+                    this.log(`📋 JSON для API готов (смотрите консоль)`, 'info');
+                }
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = {
+                    timestamp,
+                    message,
+                    type
+                };
+                
+                this.logs.unshift(logEntry);
+                
+                // Ограничиваем количество логов
+                if (this.logs.length > 50) {
+                    this.logs = this.logs.slice(0, 50);
+                }
+                
+                this.updateLogDisplay();
+            }
+
+            updateLogDisplay() {
+                const container = document.getElementById('logContainer');
+                container.innerHTML = this.logs.map(log => 
+                    `<div class="log-entry log-${log.type}">
+                        [${log.timestamp}] ${log.message}
+                    </div>`
+                ).join('');
+                
+                // Автоскролл к последней записи
+                container.scrollTop = 0;
+            }
+        }
+
+        // Предотвращение случайного зума на мобильных
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            // Предотвращение multi-touch зума
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Предотвращение double-tap зума
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+        }
+
+        // Инициализация контроллера
+        const controller = new OnlineController();
+    </script>
+</body>
+</html>

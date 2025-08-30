@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mobile Test - CS2 Controller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            min-height: 80px;
+            width: calc(50% - 20px);
+            display: inline-block;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .test-button:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+        
+        .log {
+            background: #2c2c2c;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #444;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: #0f3460;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="status">
+        <h2>📱 Тест мобильного контроллера</h2>
+        <div id="device-info"></div>
+    </div>
+
+    <div>
+        <button class="test-button" onclick="testButton('bomb_planted')">
+            💣 Бомба заложена
+        </button>
+        <button class="test-button" onclick="testButton('round_start')">
+            🎯 Начало раунда
+        </button>
+        <button class="test-button" onclick="testButton('clutch_mode')">
+            ⚡ Клатч режим
+        </button>
+        <button class="test-button" onclick="testButton('ace_moment')">
+            👑 Эйс момент
+        </button>
+    </div>
+
+    <div class="log">
+        <h3>📋 Журнал событий:</h3>
+        <div id="log-container"></div>
+    </div>
+
+    <script>
+        let logEntries = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = `[${timestamp}] ${message}`;
+            logEntries.unshift(entry);
+            
+            document.getElementById('log-container').innerHTML = 
+                logEntries.map(entry => `<div class="log-entry">${entry}</div>`).join('');
+        }
+
+        function testButton(buttonId) {
+            log(`🎯 Нажата кнопка: ${buttonId}`);
+            
+            // Симуляция API вызова
+            const apiData = {
+                buttonKey: buttonId,
+                state: '+',
+                timestamp: Date.now()
+            };
+            
+            // Отправляем на локальный сервер
+            fetch('http://127.0.0.1:2828/api/button-press', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(apiData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    log(`✅ API вызов успешен для ${buttonId}`);
+                    return response.json();
+                } else {
+                    log(`⚠️ API недоступен (код: ${response.status})`);
+                }
+            })
+            .then(data => {
+                if (data) {
+                    log(`📡 Ответ сервера: ${JSON.stringify(data)}`);
+                }
+            })
+            .catch(error => {
+                log(`❌ Ошибка: ${error.message}`);
+                log(`💾 Сохранено локально: ${buttonId}`);
+            });
+
+            // Локальное сохранение
+            localStorage.setItem(`cs2-button-${buttonId}`, JSON.stringify(apiData));
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            const deviceInfo = document.getElementById('device-info');
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+            const touchSupport = 'ontouchstart' in window;
+            
+            deviceInfo.innerHTML = `
+                Устройство: ${isMobile ? 'Мобильное' : 'Десктоп'}<br>
+                Touch поддержка: ${touchSupport ? 'Да' : 'Нет'}<br>
+                User Agent: ${navigator.userAgent.substring(0, 50)}...
+            `;
+            
+            log(`🚀 Контроллер загружен (${isMobile ? 'мобильный' : 'десктоп'} режим)`);
+        });
+
+        // Предотвращение случайного зума
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>

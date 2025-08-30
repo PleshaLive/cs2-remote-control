@@ -1,13 +1,482 @@
 <!DOCTYPE html>
 <html lang="ru">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Redirecting…</title>
-        <meta http-equiv="refresh" content="0; url=index.html">
-        <script>window.location.replace('index.html');</script>
-    </head>
-    <body>
-        Если перенаправление не сработало, откройте <a href="index.html">главную страницу контроллера</a>.
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>CS2 Remote Controller - Advanced</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23, #1a1a2e, #16213e);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .status-item {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-connected {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            box-shadow: 0 4px 15px rgba(76, 205, 196, 0.3);
+        }
+
+        .status-disconnected {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .button-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .button-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .button-card:hover::before {
+            left: 100%;
+        }
+
+        .button-card:hover {
+            transform: translateY(-5px);
+            border-color: #4ecdc4;
+            box-shadow: 0 10px 25px rgba(76, 205, 196, 0.2);
+        }
+
+        .button-card.active {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(76, 205, 196, 0.4);
+            animation: pulse 2s ease-in-out;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .button-card {
+                min-height: 100px;
+                font-size: 14px;
+                padding: 15px;
+                margin: 5px;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+
+            .button-card:hover {
+                transform: none; /* Disable hover on mobile */
+            }
+
+            .button-card:active,
+            .button-card.pressed {
+                transform: scale(0.95);
+                transition: transform 0.1s ease;
+            }
+
+            .buttons-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
+        }
+
+        .button-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .button-label {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .button-coords {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-bottom: 10px;
+        }
+
+        .button-state {
+            font-size: 2em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .settings-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            min-width: 300px;
+        }
+
+        .settings-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #4ecdc4;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+        }
+
+        .setting-input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+
+        .setting-input:focus {
+            outline: 2px solid #4ecdc4;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 205, 196, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #4ecdc4;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #ccc;
+        }
+
+        .close-btn:hover {
+            color: #ff6b6b;
+        }
+
+        .logs {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-title {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-success { color: #4ecdc4; }
+        .log-error { color: #ff6b6b; }
+        .log-info { color: #45b7d1; }
+        .log-warning { color: #ffa726; }
+
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .buttons-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-gamepad"></i> CS2 Remote Controller</h1>
+            <div class="status">
+                <div class="status-item" id="connectionStatus">
+                    <i class="fas fa-circle"></i>
+                    <span>Подключение...</span>
+                </div>
+                <div class="status-item status-connected">
+                    <i class="fas fa-server"></i>
+                    <span>GitHub API</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="buttons-grid" id="buttonsGrid">
+                <!-- Кнопки будут добавлены динамически -->
+            </div>
+
+            <div class="settings-panel">
+                <div class="settings-title">
+                    <i class="fas fa-cog"></i> Настройки
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label">Название кнопки:</label>
+                    <input type="text" class="setting-input" id="buttonName" placeholder="Новая кнопка">
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label">Иконка (Font Awesome):</label>
+                    <input type="text" class="setting-input" id="buttonIcon" placeholder="fas fa-play" value="fas fa-play">
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label">Страница:</label>
+                    <input type="number" class="setting-input" id="buttonPage" value="1" min="0" max="99">
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label">Ряд:</label>
+                    <input type="number" class="setting-input" id="buttonRow" value="1" min="0" max="7">
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label">Колонка:</label>
+                    <input type="number" class="setting-input" id="buttonCol" value="1" min="0" max="7">
+                </div>
+                
+                <button class="btn btn-primary" onclick="addButton()">
+                    <i class="fas fa-plus"></i> Добавить кнопку
+                </button>
+                
+                <button class="btn btn-secondary" onclick="exportConfig()">
+                    <i class="fas fa-download"></i> Экспорт настроек
+                </button>
+                
+                <button class="btn btn-secondary" onclick="importConfig()">
+                    <i class="fas fa-upload"></i> Импорт настроек
+                </button>
+                
+                <button class="btn btn-danger" onclick="resetConfig()">
+                    <i class="fas fa-trash"></i> Сбросить всё
+                </button>
+            </div>
+        </div>
+
+        <div class="logs">
+            <div class="log-title"><i class="fas fa-list"></i> Журнал событий</div>
+            <div id="logContainer">
+                <!-- Лог-записи -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для импорта -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <i class="fas fa-upload"></i> Импорт настроек
+            </div>
+            <div class="setting-group">
+                <label class="setting-label">JSON настройки:</label>
+                <textarea id="importJson" class="setting-input" rows="10" placeholder="Вставьте JSON настройки..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="performImport()">
+                <i class="fas fa-check"></i> Импортировать
+            </button>
+        </div>
+    </div>
+
+    <!-- Скрытый input для файлов -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+
+    <script>
+        // Определяем, какой скрипт загружать в зависимости от режима
+        const isOnline = window.location.protocol === 'https:' || window.location.hostname !== '127.0.0.1';
+        const scriptSrc = isOnline ? 'online-advanced-script.js' : 'advanced-script.js';
+        
+        const script = document.createElement('script');
+        script.src = scriptSrc;
+        document.head.appendChild(script);
+        
+        console.log(`Режим: ${isOnline ? 'Онлайн' : 'Локальный'}, загружаем: ${scriptSrc}`);
+
+        // Mobile optimization scripts
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            console.log('Мобильное устройство обнаружено');
+            
+            // Prevent double-tap zoom
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Prevent zoom on double tap
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+
+            // Add mobile class to body
+            document.body.classList.add('mobile-device');
+        }
+    </script>
+</body>
 </html>

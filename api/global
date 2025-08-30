@@ -25,6 +25,70 @@
       "col": 3,
       "label": "STOP"
     },
+    "bomb_planted": {
+      "state": "-",
+      "timestamp": 0,
+      "page": 1,
+      "row": 1,
+      "col": 1,
+      "label": "Бомба заложена"
+    },
+    "bomb_defused": {
+      "state": "-",
+      "timestamp": 0,
+      "page": 1,
+      "row": 1,
+      "col": 2,
+      "label": "Бомба обезврежена"
+    },
+    "round_start": {
+      "state": "-",
+      "timestamp": 0,
+      "page": 1,
+      "row": 1,
+      "col": 3,
+      "label": "Начало раунда"
+    },
+    "round_end": {
+      "state": "-",
+      "timestamp": 0,
+      "page": 1,
+      "row": 1,
+      "col": 4,
+      "label": "Конец раунда"
+    },
+    "clutch_mode": {
+      "state": "-",
+      "timestamp": 0,
+      "page": 1,
+      "row": 2,
+      "col": 1,
+      "label": "Клатч режим"
+    },
+    "ace_moment": {
+      "state": "-",
+      "timestamp": 0,
+      "page": 1,
+      "row": 2,
+      "col": 2,
+      "label": "Эйс момент"
+    },
+    "headshot": {
+      "state": "-",
+      "timestamp": 0,
+      "page": 1,
+      "row": 2,
+      "col": 3,
+      "label": "Хедшот"
+    },
+    "multikill": {
+      "state": "-",
+      "timestamp": 0,
+      "page": 1,
+      "row": 2,
+      "col": 4,
+      "label": "Мультикилл"
+    },
     "round1": {
       "state": "-",
       "timestamp": 0,

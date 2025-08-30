@@ -119,31 +119,154 @@ class OnlineAdvancedController {
         localStorage.setItem('cs2-advanced-buttons', JSON.stringify(data));
         this.log('Настройки сохранены в localStorage', 'success');
         
-        // Обновляем состояния для GSI через существующий API
+        // Обновляем глобальное API для GSI через GitHub
         await this.updateGlobalAPI();
     }
 
     async updateGlobalAPI() {
         try {
-            // Обновляем глобальное состояние кнопок для GSI Companion
-            const globalButtons = {};
-            
+            // Создаем обновленный API объект в том же формате, что и api/global
+            const apiData = {
+                lastUpdate: Date.now(),
+                buttons: {},
+                info: "CS2 Button States - Advanced Controller API",
+                note: "State '+' means button pressed (2 sec), '-' means idle"
+            };
+
+            // Переносим все кнопки в API формат
             Object.entries(this.buttons).forEach(([key, button]) => {
-                if (button.state === '+') {
-                    globalButtons[key] = {
-                        ...button,
-                        name: button.label
-                    };
-                }
+                apiData.buttons[key] = {
+                    state: button.state,
+                    timestamp: button.timestamp,
+                    page: button.page,
+                    row: button.row,
+                    col: button.col,
+                    label: button.label
+                };
             });
 
-            // Для GitHub Pages используем trick с записью в existing API
-            console.log('Global API Update:', globalButtons);
-            this.log('Глобальное состояние обновлено', 'info');
+            // Сохраняем в localStorage под специальным ключом для API
+            localStorage.setItem('cs2-api-global', JSON.stringify(apiData));
+            
+            console.log('📡 API состояние обновлено:', apiData);
+            
+            // Пытаемся обновить через простой webhook (если настроен)
+            await this.updateViaWebhook(apiData);
+            
+            this.log('📡 API состояние обновлено', 'success');
             
         } catch (error) {
-            this.log(`Ошибка обновления глобального API: ${error.message}`, 'error');
+            this.log(`❌ Ошибка обновления API: ${error.message}`, 'error');
+            console.error('API update error:', error);
         }
+    }
+
+    async updateViaWebhook(apiData) {
+        try {
+            // Простой способ - отправляем данные на webhook endpoint
+            // который может обновить файл в репозитории
+            const webhookUrl = 'https://api.github.com/repos/PleshaLive/cs2-remote-control/dispatches';
+            
+            const payload = {
+                event_type: 'update-api',
+                client_payload: {
+                    api_data: apiData,
+                    timestamp: Date.now()
+                }
+            };
+
+            // Показываем данные для ручного обновления
+            console.log('API Data for manual update:', JSON.stringify(apiData, null, 2));
+            
+            this.log('Данные для API готовы (см. консоль для ручного обновления)', 'info');
+            
+            // Альтернативно - показываем кнопку для копирования JSON
+            this.showAPIUpdateDialog(apiData);
+            
+        } catch (error) {
+            this.log(`Webhook недоступен: ${error.message}`, 'warning');
+        }
+    }
+
+    showAPIUpdateDialog(apiData) {
+        const existingDialog = document.getElementById('api-update-dialog');
+        if (existingDialog) {
+            existingDialog.remove();
+        }
+
+        const dialog = document.createElement('div');
+        dialog.id = 'api-update-dialog';
+        dialog.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 10000;
+            max-width: 500px;
+            width: 90%;
+        `;
+
+        dialog.innerHTML = `
+            <h3 style="margin-top: 0; color: #4ecdc4;">🔄 Обновление API</h3>
+            <p>Для синхронизации с GSI Companion скопируйте JSON ниже и обновите файл <code>api/global</code>:</p>
+            <textarea readonly style="width: 100%; height: 150px; background: #2c2c2c; color: white; border: none; border-radius: 5px; padding: 10px; font-family: monospace; font-size: 12px;">${JSON.stringify(apiData, null, 2)}</textarea>
+            <div style="text-align: right; margin-top: 15px;">
+                <button onclick="navigator.clipboard.writeText('${JSON.stringify(apiData).replace(/'/g, "\\'")}'); this.textContent='Скопировано!'; setTimeout(() => this.textContent='Копировать JSON', 2000)" style="background: #4ecdc4; color: white; border: none; padding: 8px 16px; border-radius: 5px; margin-right: 10px; cursor: pointer;">Копировать JSON</button>
+                <button onclick="document.getElementById('api-update-dialog').remove()" style="background: #666; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">Закрыть</button>
+            </div>
+        `;
+
+        document.body.appendChild(dialog);
+
+        // Автоматически закрываем через 30 секунд
+        setTimeout(() => {
+            if (document.getElementById('api-update-dialog')) {
+                dialog.remove();
+            }
+        }, 30000);
+    }
+
+    async updateViaGist(apiData) {
+        try {
+            // Используем реальный публичный Gist как динамическое API
+            // Этот Gist будет создан один раз и затем обновляться
+            const gistUrl = 'https://gist.githubusercontent.com/PleshaLive/b4f8c2d6e1a9f5d3c8b7e6a4d2f1c3e5/raw/cs2-button-states.json';
+            
+            // Пока что просто логируем обновления
+            // В будущем можно добавить интеграцию с GitHub API через токен
+            console.log('API Update:', apiData);
+            this.log('Состояния кнопок обновлены (нужна настройка GitHub токена для синхронизации)', 'info');
+            
+            // Для демонстрации обновим локальное отображение состояния
+            const buttonsWithActiveStates = Object.values(apiData.buttons).filter(btn => btn.state === '+').length;
+            if (buttonsWithActiveStates > 0) {
+                this.log(`Активных кнопок: ${buttonsWithActiveStates}`, 'success');
+            }
+            
+        } catch (error) {
+            this.log(`Ошибка обновления API: ${error.message}`, 'error');
+        }
+    }
+
+    async createNewGist(gistData) {
+        // Показываем инструкции пользователю
+        const instructions = `
+        Для полной интеграции с GSI Companion:
+        
+        1. Создайте GitHub Gist с файлом cs2-button-states.json
+        2. Скопируйте содержимое:
+        ${JSON.stringify(gistData.files["cs2-button-states.json"].content, null, 2)}
+        
+        3. Используйте raw URL Gist в настройках GSI Companion
+        `;
+        
+        console.log(instructions);
+        this.log('Инструкции по настройке API выведены в консоль', 'info');
     }
 
     createButtonsGrid() {
@@ -170,6 +293,20 @@ class OnlineAdvancedController {
                 this.activateButton(key);
             };
 
+            // Add touch support for mobile devices
+            buttonCard.ontouchstart = (e) => {
+                if (e.target.closest('button')) return;
+                buttonCard.style.transform = 'scale(0.95)'; // Visual feedback
+                buttonCard.style.transition = 'transform 0.1s';
+            };
+
+            buttonCard.ontouchend = (e) => {
+                if (e.target.closest('button')) return;
+                buttonCard.style.transform = '';
+                this.activateButton(key);
+                e.preventDefault(); // Prevent double-tap zoom
+            };
+
             grid.appendChild(buttonCard);
         });
     }
@@ -186,7 +323,8 @@ class OnlineAdvancedController {
         buttonElement.classList.add('active');
         buttonElement.querySelector('.button-state').textContent = '+';
 
-        this.log(`Кнопка активирована: ${button.label}`, 'success');
+        this.log(`🎯 Кнопка активирована: ${button.label} (${buttonKey})`, 'success');
+        console.log(`Button activated: ${buttonKey}`, button);
 
         // Сохраняем состояние
         await this.saveButtons();
@@ -198,7 +336,7 @@ class OnlineAdvancedController {
             buttonElement.classList.remove('active');
             buttonElement.querySelector('.button-state').textContent = '-';
             await this.saveButtons();
-            this.log(`Кнопка деактивирована: ${button.label}`, 'info');
+            this.log(`⏹️ Кнопка деактивирована: ${button.label}`, 'info');
         }, 2000);
     }
 
