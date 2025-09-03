@@ -1,0 +1,11 @@
+﻿{
+  "button": "-",
+  "timestamp": 0,
+  "coordinates": {
+    "page": 1,
+    "row": 2,
+    "col": 1
+  },
+  "status": "idle",
+  "source": "github-pages-api"
+}
